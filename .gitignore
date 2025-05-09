@@ -1,5 +1,8 @@
 *.hex
 *.H*
-logfile.txt
+*.txt
 *.ppm
 rle.exe
+output
+test data
+holes

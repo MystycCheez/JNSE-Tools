@@ -4,8 +4,12 @@
 #include <stdint.h>
 #include <string.h>
 
+#define max(a,b) (((a) > (b)) ? (a) : (b))
+
 FILE *logfile;
 FILE *output;
+
+bool hex_output = false;
 
 const char* hexToTile(uint8_t hex)
 {
@@ -114,46 +118,62 @@ bool ParseTerrain(uint8_t *data)
         if (data[i] >= 0x80 || data[i] == 0x01) {
             runRpt = hexToCount(data[i]);
             tilesRemaining -= runRpt;
-            fprintf(logfile, "0x%02X, runRpt: %d\n", data[i], runRpt);
+            fprintf(logfile, "%s: %d\n", hexToTile(data[i + 1]), runRpt);
             for (size_t j = 0; j < runRpt; j++) {
                 const char *color = typeToColor(data[i + 1]);
                 fprintf(output, "%s\n", color);
             }
             i++;
-            totalHex++;
+            totalHex += 2;
         } else if (data[i] < 0x80 && data[i] > 0x01) {
             runLit = hexToLitCount(data[i]);
             tilesRemaining -= runLit;
-            fprintf(logfile, "runLit: %d\n", runLit);
+            fprintf(logfile, "Literal Count: %d\n", runLit);
             for (size_t j = 1; j <= runLit; j++) {
                 const char *color = typeToColor(data[i + j]);
-                fprintf(logfile, "0x%02X\n", data[i + j]);
+                fprintf(logfile, "  %s\n", hexToTile(data[i + j]));
                 fprintf(output, "%s\n", color);
             }
             i += runLit;
-            totalHex += runLit;
+            totalHex += runLit + 1;
         }
-        totalHex++;
     }
-    // for (size_t i = 2; i < totalHex; i++) {
-    //     hexToPrintColor(data[i]);
-    //     printf("%02X ", data[i] & 0xFF);
-    //     if ((i + 1 - 2) % 8 == 0) {
-    //         printf("\n");
-    //     }
-    // }
+    if (hex_output) {
+        for (size_t i = 2; i < totalHex + 2; i++) {
+            hexToPrintColor(data[i]);
+            printf("%02X ", data[i] & 0xFF);
+            if ((i + 1 - 2) % 12 == 0) {
+                printf("\n");
+            }
+        }
+    }
     return true;
 }
 
 int main(int argc, char *argv[])
 {
-    if (argc != 2) {
+    if (argc < 0 && argc > 3) {
         fprintf(stderr, "ERROR: Incorrect number of args!\n");
         exit(1);
     }
 
+    if (argc == 3) {
+        if (strcmp(argv[2], "-h") == 0) {
+            hex_output = true;
+        } else {
+            fprintf(stderr, "ERROR: Not a valid argument!\n");
+            exit(1);
+        }
+    }
+    
     char *filename = malloc(30);
     sprintf(filename, argv[1]);
+    char *dot = strchr(filename, '.');
+    if (dot == NULL) {
+        fprintf(stderr, "ERROR: Not a valid file, missing extension!\n");
+        exit(1);
+    }
+    dot++;
     FILE *file = fopen(filename, "rb");
 
     if (file == NULL) {
@@ -161,7 +181,6 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    char *dot = strchr(filename, '.') + 1;
     char *chunk = strchr(filename, '/');
     size_t nameLen = strlen(chunk) - strlen(dot);
     char *name = malloc(sizeof(char) * nameLen);
@@ -174,7 +193,9 @@ int main(int argc, char *argv[])
     const char *headerText = "P3\n240 80\n255\n";
     fwrite(headerText, sizeof(char), strlen(headerText), output);
 
-    logfile = fopen("logfile.txt", "w");
+    char *rle_log = malloc(30);
+    sprintf(rle_log, "output/%s_%s.txt", name, dot);
+    logfile = fopen(rle_log, "w");
 
     fseek(file, 0, SEEK_END);
     size_t fileLen = ftell(file);
