@@ -1,12 +1,5 @@
-test_h1_0.hex
-test_h1_1.hex
-test_h1_2.hex
-test_h1_3.hex
-test_h1_4.hex
-test_h1_5.hex
-test_h1_6.hex
-test_h1_7.hex
-pine_h1_1.hex
-log.txt
-out.ppm
+*.hex
+*.H*
+logfile.txt
+*.ppm
 rle.exe
