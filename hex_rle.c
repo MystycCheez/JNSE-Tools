@@ -7,7 +7,8 @@
 #define max(a,b) (((a) > (b)) ? (a) : (b))
 
 FILE *logfile;
-FILE *output;
+FILE *terrain;
+FILE *heightmap;
 
 bool hex_output = false;
 
@@ -94,6 +95,13 @@ const char *typeToColor(uint8_t hex)
     }
 }
 
+char *heightToColor(uint8_t hex)
+{
+    char *color = malloc(12);
+    sprintf(color, "%d %d %d", hex, hex, hex);
+    return color;
+}
+
 int hexToCount(uint8_t hex)
 {
     if (hex == 0x01) return 1;
@@ -108,10 +116,11 @@ int hexToLitCount(uint8_t hex)
     return hex;
 }
 
-bool ParseTerrain(uint8_t *data)
+size_t ParseTerrain(uint8_t *data)
 {
     int tilesRemaining = 240 * 80;
     size_t totalHex = 0;
+    size_t offset = 2;
     uint8_t runRpt = 0;
     uint8_t runLit = 0;
     for (size_t i = 2; tilesRemaining > 0; i++) {
@@ -121,7 +130,7 @@ bool ParseTerrain(uint8_t *data)
             fprintf(logfile, "%s: %d\n", hexToTile(data[i + 1]), runRpt);
             for (size_t j = 0; j < runRpt; j++) {
                 const char *color = typeToColor(data[i + 1]);
-                fprintf(output, "%s\n", color);
+                fprintf(terrain, "%s\n", color);
             }
             i++;
             totalHex += 2;
@@ -132,11 +141,12 @@ bool ParseTerrain(uint8_t *data)
             for (size_t j = 1; j <= runLit; j++) {
                 const char *color = typeToColor(data[i + j]);
                 fprintf(logfile, "  %s\n", hexToTile(data[i + j]));
-                fprintf(output, "%s\n", color);
+                fprintf(terrain, "%s\n", color);
             }
             i += runLit;
             totalHex += runLit + 1;
         }
+        offset = i;
     }
     if (hex_output) {
         for (size_t i = 2; i < totalHex + 2; i++) {
@@ -145,6 +155,34 @@ bool ParseTerrain(uint8_t *data)
             if ((i + 1 - 2) % 12 == 0) {
                 printf("\n");
             }
+        }
+    }
+    return offset + 1;
+}
+
+bool ParseHeightmap(uint8_t *data)
+{
+    int tilesRemaining = 240 * 80;
+    uint8_t runRpt = 0;
+    uint8_t runLit = 0;
+    for (size_t i = 0; tilesRemaining > 0; i++) {
+        if (data[i] >= 0x80 || data[i] == 0x01) {
+            runRpt = hexToCount(data[i]);
+            tilesRemaining -= runRpt;
+            for (size_t j = 0; j < runRpt; j++) {
+                const char *color = heightToColor(data[i + 1]);
+                fprintf(heightmap, "%s\n", color);
+            }
+            i++;
+        } else if (data[i] < 0x80 && data[i] > 0x01) {
+            runLit = hexToLitCount(data[i]);
+            tilesRemaining -= runLit;
+            fprintf(logfile, "Literal Count: %d\n", runLit);
+            for (size_t j = 1; j <= runLit; j++) {
+                const char *color = heightToColor(data[i + j]);
+                fprintf(heightmap, "%s\n", color);
+            }
+            i += runLit;
         }
     }
     return true;
@@ -186,15 +224,19 @@ int main(int argc, char *argv[])
     char *name = malloc(sizeof(char) * nameLen);
     snprintf(name, nameLen, chunk);
 
-    char *ppm = malloc(30);
-    sprintf(ppm, "output/%s_%s.ppm", name, dot);
-    output = fopen(ppm, "w");
+    char *terrain_ppm = malloc(30);
+    sprintf(terrain_ppm, "output/%s_%s_T.ppm", name, dot);
+    terrain = fopen(terrain_ppm, "w");
+    char *heightmap_ppm = malloc(30);
+    sprintf(heightmap_ppm, "output/%s_%s_H.ppm", name, dot);
+    heightmap = fopen(heightmap_ppm, "w");
 
     const char *headerText = "P3\n240 80\n255\n";
-    fwrite(headerText, sizeof(char), strlen(headerText), output);
+    fwrite(headerText, sizeof(char), strlen(headerText), terrain);
+    fwrite(headerText, sizeof(char), strlen(headerText), heightmap);
 
     char *rle_log = malloc(30);
-    sprintf(rle_log, "output/%s_%s.txt", name, dot);
+    sprintf(rle_log, "terrain/%s_%s.txt", name, dot);
     logfile = fopen(rle_log, "w");
 
     fseek(file, 0, SEEK_END);
@@ -210,7 +252,8 @@ int main(int argc, char *argv[])
 
     for (size_t i = 0; i < fileLen; i++) {
         if (memcmp(terrainHeader, data + i, sizeof(uint8_t) * 2) == 0) {
-            if (ParseTerrain(data + i)) break;
+            size_t offset = ParseTerrain(data + i);
+            ParseHeightmap(data + i + offset);
         } 
     }
 
