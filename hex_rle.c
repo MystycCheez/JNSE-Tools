@@ -4,8 +4,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#define max(a,b) (((a) > (b)) ? (a) : (b))
-
 FILE *logfile;
 FILE *terrain;
 FILE *heightmap;
@@ -114,6 +112,21 @@ int hexToLitCount(uint8_t hex)
         fprintf(stderr, "ERROR: Unexpected hex! Got %02X\n", hex);
     }
     return hex;
+}
+
+// Returns the first byte in an rle string(?), either the litCount or rptCount
+// Modifies the index
+uint8_t countTiles(uint8_t *data, uint8_t *index)
+{
+    uint8_t count = 0;
+    while (
+        index < 240 * 80
+        && data[*index] != data[*index + 1]
+        && data[*index] < 0x08
+        && data[*index + 1] < 0x08
+        && count < 0x80
+    ) {count++; *index++;}
+    return count;
 }
 
 size_t ParseTerrain(uint8_t *data)
