@@ -7,6 +7,7 @@
 FILE *logfile;
 FILE *terrain;
 FILE *heightmap;
+FILE *bpm;
 
 bool hex_output = false;
 
@@ -119,38 +120,30 @@ int hexToLitCount(uint8_t hex)
     return hex;
 }
 
+uint8_t *ParseBPM()
+{
+
+}
+
 bool isRepeating(uint8_t data[], size_t *index)
 {
     return data[*index] == data[*index + 1];
 }
 
-// Returns the first byte in an rle string(?), rptCount
+// Returns struct containing rle data (type of sequence and count)
 // Modifies the index
-RptData countTiles(uint8_t data[], size_t *index)
+RptData ConvertSequence(uint8_t data[], size_t *index)
 {
-    RptData returnVal = {0};
+    RptData rptData = {0};
     bool repeating = false;
     bool repeatingOld = repeating;
-    while (*index < 240 * 80 && returnVal.count < 0x80) {
-        if (repeating == repeatingOld) {returnVal.count++; *index++;} else break;
+    while (*index < 240 * 80 && rptData.count < 0x80) {
+        if (repeating == repeatingOld) {rptData.count++; *index++;} else break;
         repeatingOld = repeating;
         repeating = isRepeating(data, index);
     }
-    returnVal.isRepeating = repeatingOld;
-    return returnVal;
-}
-
-// Returns the first byte in an rle string(?), litCount
-// Modifies the index
-uint8_t countNonrepeatingTiles(uint8_t data[], size_t *index)
-{
-    uint8_t count = 0;
-    while (
-        *index < 240 * 80
-        && data[*index] != data[*index + 1]
-        && count < 0x80
-    ) {count++; *index++;}
-    return count;
+    rptData.isRepeating = repeatingOld;
+    return rptData;
 }
 
 size_t ParseTerrain(uint8_t data[])
