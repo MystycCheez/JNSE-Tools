@@ -10,6 +10,11 @@ FILE *heightmap;
 
 bool hex_output = false;
 
+typedef struct RptData {
+    uint8_t count;
+    bool isRepeating;
+} RptData;
+
 const char* hexToTile(uint8_t hex)
 {
     switch (hex) {
@@ -114,22 +119,41 @@ int hexToLitCount(uint8_t hex)
     return hex;
 }
 
-// Returns the first byte in an rle string(?), either the litCount or rptCount
+bool isRepeating(uint8_t data[], size_t *index)
+{
+    return data[*index] == data[*index + 1];
+}
+
+// Returns the first byte in an rle string(?), rptCount
 // Modifies the index
-uint8_t countTiles(uint8_t *data, uint8_t *index)
+RptData countTiles(uint8_t data[], size_t *index)
+{
+    RptData returnVal = {0};
+    bool repeating = false;
+    bool repeatingOld = repeating;
+    while (*index < 240 * 80 && returnVal.count < 0x80) {
+        if (repeating == repeatingOld) {returnVal.count++; *index++;} else break;
+        repeatingOld = repeating;
+        repeating = isRepeating(data, index);
+    }
+    returnVal.isRepeating = repeatingOld;
+    return returnVal;
+}
+
+// Returns the first byte in an rle string(?), litCount
+// Modifies the index
+uint8_t countNonrepeatingTiles(uint8_t data[], size_t *index)
 {
     uint8_t count = 0;
     while (
-        index < 240 * 80
+        *index < 240 * 80
         && data[*index] != data[*index + 1]
-        && data[*index] < 0x08
-        && data[*index + 1] < 0x08
         && count < 0x80
     ) {count++; *index++;}
     return count;
 }
 
-size_t ParseTerrain(uint8_t *data)
+size_t ParseTerrain(uint8_t data[])
 {
     int tilesRemaining = 240 * 80;
     size_t totalHex = 0;
@@ -173,7 +197,7 @@ size_t ParseTerrain(uint8_t *data)
     return offset + 1;
 }
 
-bool ParseHeightmap(uint8_t *data)
+bool ParseHeightmap(uint8_t data[])
 {
     int tilesRemaining = 240 * 80;
     uint8_t runRpt = 0;

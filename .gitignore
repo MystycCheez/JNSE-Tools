@@ -2,7 +2,10 @@
 *.H*
 *.txt
 *.ppm
-rle.exe
+*.exe
+*.aseprite
+*.pim
+input
 output
 test data
 holes
