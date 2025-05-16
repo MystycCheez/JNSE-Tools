@@ -1,10 +1,5 @@
-*.hex
-*.H*
 *.txt
-*.ppm
 *.exe
-*.aseprite
-*.pim
 input
 output
 test data
