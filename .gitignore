@@ -1,6 +1,7 @@
 *.txt
 *.exe
 input
+images
 output
 test data
 holes
