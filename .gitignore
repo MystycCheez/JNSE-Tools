@@ -1,6 +1,7 @@
 *.txt
 *.exe
 input
+log
 images
 output
 test data

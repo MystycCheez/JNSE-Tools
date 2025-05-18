@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
     fwrite(headerText, sizeof(char), strlen(headerText), heightmap);
 
     char *rle_log = malloc(30);
-    sprintf(rle_log, "terrain/%s_%s.txt", name, dot);
+    sprintf(rle_log, "log/%s_%s.txt", name, dot);
     logfile = fopen(rle_log, "w");
 
     fseek(file, 0, SEEK_END);

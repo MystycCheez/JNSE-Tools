@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 FILE *logfile;
+FILE *seqlog;
 FILE *terrain;
 FILE *heightmap;
 FILE *bpm;

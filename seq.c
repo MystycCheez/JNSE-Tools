@@ -9,8 +9,6 @@ SequenceType getSequenceType(uint8_t data[])
 }
 
 // Returns struct containing rle data (type of sequence and count)
-// Modifies the index
-// TODO: consider look ahead (comparing index + 1 and index + 2)
 RleData ConvertSequence(uint8_t data[])
 {
     RleData rleData = {0, SEQUENCE_REPEAT};
@@ -24,7 +22,6 @@ RleData ConvertSequence(uint8_t data[])
     // Look ahead to see if the last item is equal to the first item of the next iteration
     if (seqData.seqTypeOld == SEQUENCE_UNIQUE && rleData.count < 0x80) {
         if (getSequenceType(data + rleData.count - 1) == SEQUENCE_REPEAT) {
-            printf("%d\n", rleData.count);
             rleData.count--;
         }
     }

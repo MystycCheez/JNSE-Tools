@@ -7,6 +7,8 @@
 #include "structs.h"
 #include "enums.h"
 #include "seq.c"
+#include "hex.c"
+#include "globals.h"
 
 int main(int argc, char *argv[])
 {
@@ -30,6 +32,20 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
+    char *chunk = strchr(filename, '/');
+    size_t nameLen = strlen(chunk) - strlen(dot);
+    char *name = malloc(sizeof(char) * nameLen);
+    snprintf(name, nameLen, chunk);
+
+    char *seq_log = malloc(30);
+    sprintf(seq_log, "log/%s_%s.txt", name, dot);
+    seqlog = fopen(seq_log, "w");
+
+    if (seqlog == NULL) {
+        fprintf(stderr, "ERROR: Cannot open file: %s!\n", seq_log);
+        exit(1);
+    }
+
     char delims[2] = {'\r', '\n'};
 
     char* header = malloc(20);
@@ -38,47 +54,54 @@ int main(int argc, char *argv[])
     size_t headerLen = strlen(header);
     free(header);
 
-    fseek(file, 0, SEEK_END);
-    size_t fileLen = ftell(file) - headerLen;
-    rewind(file);
-
-    char *fileData = malloc(fileLen);
-
-    for (size_t i = 0; i < fileLen; i++) {
-        fileData[i] = fgetc(file);
-    }
-    fileData = fileData + headerLen;
+    fseek(file, headerLen, SEEK_SET);
 
     char *data = malloc(240 * 80);
-    char *buf = malloc(240);
+    char c;
+
     size_t iteration = 0;
-    buf = strtok(fileData, delims);
-    while (buf != NULL) {
-        strncpy(data + iteration * 240, buf, 240);
-        buf = strtok(NULL, delims);
-        iteration++;
+
+    while (iteration < 240 * 80) {
+        c = fgetc(file);
+        if (c != '\r' && c != '\n') data[iteration++] = c;
     }
+
     uint8_t *convData = malloc(sizeof(uint8_t) * 240 * 80);
     for (size_t i = 0; i < 240 * 80; i++) {
-        convData[i] = data[i] - '0';
-        // printf("%d", convData[i]);
+        convData[i] = (uint8_t)(data[i] - '0');
+        // printf("%lld: %d\n", i, convData[i]);
     }
     // printf("\n");
+    // exit(0);
 
     iteration = 0;
-    RleData *rptData = malloc(sizeof(RleData) * 80);
+    size_t rleBlockSize = 80;
+    RleData *rleData = malloc(sizeof(RleData) * rleBlockSize);
     size_t accumulator = 0;
     while (accumulator < 240 * 80) {
-        rptData[iteration] = ConvertSequence(convData + accumulator);
-        printf("count: %d\n", rptData[iteration].count);
-        printf("type:  %s\n", (rptData[iteration].seqType ? "Repeat": "Unique"));
-        for (size_t i = 0; i < rptData[iteration].count; i++) {
-            printf("convData[%lld]: %02X\n", i + accumulator, convData[i + accumulator]);
+        rleData[iteration] = ConvertSequence(convData + accumulator);
+        fprintf(seqlog, "count: %d\n", rleData[iteration].count);
+        fprintf(seqlog, "type:  %s\n", (rleData[iteration].seqType ? "Repeat": "Unique"));
+        for (size_t i = 0; i < rleData[iteration].count; i++) {
+            fprintf(seqlog, "convData[%lld]: %02X\n", i + accumulator, convData[i + accumulator]);
         }
-        printf("\n");
-        accumulator += rptData[iteration].count;
+        fprintf(seqlog, "\n");
+        accumulator += rleData[iteration].count;
         iteration++;
+        if (iteration >= rleBlockSize) {
+            rleBlockSize *= 1.5;
+            // printf("rleBlockSize: %lld\n", rleBlockSize);
+            RleData *tmp = realloc(rleData, sizeof(RleData) * rleBlockSize);
+            if (tmp == NULL) {
+                fprintf(stderr, "ERROR: Failed to realloc!\n");
+                exit(1);
+            }
+            rleData = tmp;
+        }
+        // printf("Iteration: %lld\n", iteration);
     }
+
+    fclose(seqlog);
     
     return 0;
 }
