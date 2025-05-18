@@ -6,30 +6,7 @@
 
 #include "structs.h"
 #include "enums.h"
-
-SequenceType getSequenceType(uint8_t data[], size_t *index)
-{
-    return data[*index] == data[*index + 1];
-}
-
-// Returns struct containing rle data (type of sequence and count)
-// Modifies the index
-RptData ConvertSequence(uint8_t data[], size_t *index)
-{
-    RptData rptData = {1, SEQUENCE_REPEAT};
-    SequenceData seqData = {SEQUENCE_REPEAT, SEQUENCE_UNIQUE};
-    while (*index < 240 * 80 && rptData.count < 0x80) {
-        if (seqData.seqType == seqData.seqTypeOld) {
-            rptData.count++; *index = *index + 1;
-        } else if (*index) break;
-        seqData.seqTypeOld = seqData.seqType;
-        seqData.seqType = getSequenceType(data, index);
-    }
-    // The while loop breaks if it detects a change, This means:
-    // The type for all but the last iteration needs to be returned
-    rptData.seqType = seqData.seqTypeOld;
-    return rptData;
-}
+#include "seq.c"
 
 int main(int argc, char *argv[])
 {
@@ -88,9 +65,20 @@ int main(int argc, char *argv[])
     }
     // printf("\n");
 
-    size_t index = 0;
-    RptData rptData = ConvertSequence(convData, &index);
-    printf("count: %d\n", rptData.count);
-    printf("type:  %s\n", (rptData.seqType ? "Repeat": "Unique"));
+    iteration = 0;
+    RleData *rptData = malloc(sizeof(RleData) * 80);
+    size_t accumulator = 0;
+    while (accumulator < 240 * 80) {
+        rptData[iteration] = ConvertSequence(convData + accumulator);
+        printf("count: %d\n", rptData[iteration].count);
+        printf("type:  %s\n", (rptData[iteration].seqType ? "Repeat": "Unique"));
+        for (size_t i = 0; i < rptData[iteration].count; i++) {
+            printf("convData[%lld]: %02X\n", i + accumulator, convData[i + accumulator]);
+        }
+        printf("\n");
+        accumulator += rptData[iteration].count;
+        iteration++;
+    }
+    
     return 0;
 }

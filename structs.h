@@ -10,9 +10,9 @@ typedef struct SequenceData {
     SequenceType seqTypeOld : 1;
 } SequenceData;
 
-typedef struct RptData {
+typedef struct RleData {
     uint8_t count;
     SequenceType seqType;
-} RptData;
+} RleData;
 
 #endif
