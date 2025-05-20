@@ -18,12 +18,12 @@ int main(int argc, char *argv[])
 
     char *filename = malloc(30);
     sprintf(filename, argv[1]);
-    char *dot = strchr(filename, '.');
-    if (dot == NULL) {
+    char *extension = strchr(filename, '.');
+    if (extension == NULL) {
         fprintf(stderr, "ERROR: Not a valid file, missing extension!\n");
         exit(1);
     }
-    dot++;
+    extension++;
     FILE *file = fopen(filename, "rb");
 
     if (file == NULL) {
@@ -41,15 +41,15 @@ int main(int argc, char *argv[])
     }
 
     char *chunk = strchr(filename, '/');
-    size_t nameLen = strlen(chunk) - strlen(dot);
+    size_t nameLen = strlen(chunk) - strlen(extension);
     char *name = malloc(sizeof(char) * nameLen);
     snprintf(name, nameLen, chunk);
 
     char *terrain_ppm = malloc(30);
-    sprintf(terrain_ppm, "output/%s_%s_T.ppm", name, dot);
+    sprintf(terrain_ppm, "ppm-out/%s_T.ppm", name);
     terrain = fopen(terrain_ppm, "w");
     char *heightmap_ppm = malloc(30);
-    sprintf(heightmap_ppm, "output/%s_%s_H.ppm", name, dot);
+    sprintf(heightmap_ppm, "ppm-out/%s_H.ppm", name);
     heightmap = fopen(heightmap_ppm, "w");
 
     const char *headerText = "P3\n240 80\n255\n";
@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
     fwrite(headerText, sizeof(char), strlen(headerText), heightmap);
 
     char *rle_log = malloc(30);
-    sprintf(rle_log, "log/%s_%s.txt", name, dot);
+    sprintf(rle_log, "log/%s_%s.txt", name, extension);
     logfile = fopen(rle_log, "w");
 
     fseek(file, 0, SEEK_END);

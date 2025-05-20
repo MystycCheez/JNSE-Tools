@@ -19,12 +19,12 @@ int main(int argc, char *argv[])
 
     char *filename = malloc(30);
     sprintf(filename, argv[1]);
-    char *dot = strchr(filename, '.');
-    if (dot == NULL) {
+    char *extension = strchr(filename, '.');
+    if (extension == NULL) {
         fprintf(stderr, "ERROR: Not a valid file, missing extension!\n");
         exit(1);
     }
-    dot++;
+    extension++;
     FILE *file = fopen(filename, "rb");
 
     if (file == NULL) {
@@ -33,16 +33,34 @@ int main(int argc, char *argv[])
     }
 
     char *chunk = strchr(filename, '/');
-    size_t nameLen = strlen(chunk) - strlen(dot);
+    size_t nameLen = strlen(chunk) - strlen(extension);
     char *name = malloc(sizeof(char) * nameLen);
     snprintf(name, nameLen, chunk);
 
-    char *seq_log = malloc(30);
-    sprintf(seq_log, "log/%s_%s.txt", name, dot);
-    seqlog = fopen(seq_log, "w");
+    // char *seq_log = malloc(30);
+    // sprintf(seq_log, "log/%s_%s.txt", name, extension);
+    // seqlog = fopen(seq_log, "w");
 
-    if (seqlog == NULL) {
-        fprintf(stderr, "ERROR: Cannot open file: %s!\n", seq_log);
+    // if (seqlog == NULL) {
+    //     fprintf(stderr, "ERROR: Cannot open file: %s!\n", seq_log);
+    //     exit(1);
+    // }
+
+    char *rle_log = malloc(30);
+    sprintf(rle_log, "log/%s_log.txt", name);
+    rlelog = fopen(rle_log, "w");
+
+    if (rlelog == NULL) {
+        fprintf(stderr, "ERROR: Cannot open file: %s!\n", rle_log);
+        exit(1);
+    }
+
+    char *rle_out = malloc(30);
+    sprintf(rle_out, "rle-out/%s.rle", name);
+    rleOut = fopen(rle_out, "wb");
+
+    if (rleOut == NULL) {
+        fprintf(stderr, "ERROR: Cannot open file: %s!\n", rle_out);
         exit(1);
     }
 
@@ -79,7 +97,7 @@ int main(int argc, char *argv[])
     RleData *rleData = malloc(sizeof(RleData) * rleBlockSize);
     size_t accumulator = 0;
     while (accumulator < 240 * 80) {
-        rleData[iteration] = ConvertSequence(convData + accumulator);
+        rleData[iteration] = ConvertSequence(convData, accumulator);
         fprintf(seqlog, "count: %d\n", rleData[iteration].count);
         fprintf(seqlog, "type:  %s\n", (rleData[iteration].seqType ? "Repeat": "Unique"));
         for (size_t i = 0; i < rleData[iteration].count; i++) {
@@ -101,7 +119,31 @@ int main(int argc, char *argv[])
         // printf("Iteration: %lld\n", iteration);
     }
 
-    fclose(seqlog);
+    accumulator = 0;
+    iteration = 0;
+
+    while (accumulator < 240 * 80) {
+        uint8_t *tmp2 = convData + accumulator;
+        fprintf(rlelog, "Iteration: %lld\n", iteration);
+        if (rleData[iteration].seqType == SEQUENCE_REPEAT) {
+            uint8_t tmp = hexToRepeatCount(rleData[iteration].count);
+            fwrite(&tmp, sizeof(uint8_t), 1, rleOut);
+            fwrite(tmp2, sizeof(uint8_t), 1, rleOut);
+            fprintf(rlelog, "REPEAT: %u\n%u\n\n", rleData[iteration].count, *tmp2);
+        } else {
+            fwrite(&rleData[iteration].count, sizeof(uint8_t), 1, rleOut);
+            fwrite(tmp2, sizeof(uint8_t), rleData[iteration].count, rleOut);
+            fprintf(rlelog, "UNIQUE: %u\n", rleData[iteration].count);
+            for (size_t i = 0; i < rleData[iteration].count; i++) {
+                fprintf(rlelog, "%u\n", tmp2[i]);
+            }
+            fprintf(rlelog, "\n");
+        }
+        accumulator += rleData[iteration].count;
+        iteration++;
+    }
+
+    // fclose(seqlog);
     
     return 0;
 }

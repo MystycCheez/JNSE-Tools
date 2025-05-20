@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-const char* hexToTile(uint8_t hex)
+const char* hexToTerrainText(uint8_t hex)
 {
     switch (hex) {
         case 0x00:
@@ -59,7 +59,7 @@ void hexToPrintColor(uint8_t hex)
     }
 }
 
-const char *typeToColor(uint8_t hex)
+const char *typeToRGB_Text(uint8_t hex)
 {
     switch (hex) {
         case 0x00:
@@ -84,13 +84,13 @@ const char *typeToColor(uint8_t hex)
     }
 }
 
-int hexToCount(uint8_t hex)
+int hexToRepeatCount(uint8_t hex)
 {
     if (hex == 0x01) return 1;
     return 0x100 - hex + 1;
 }
 
-int hexToLitCount(uint8_t hex)
+int hexToUniqueCount(uint8_t hex)
 {
     if (hex < 0x02 || hex > 0x7F) {
         fprintf(stderr, "ERROR: Unexpected hex! Got %02X\n", hex);
@@ -98,7 +98,7 @@ int hexToLitCount(uint8_t hex)
     return hex;
 }
 
-char *heightToColor(uint8_t hex)
+char *heightToGrayscaleText(uint8_t hex)
 {
     char *color = malloc(12);
     sprintf(color, "%d %d %d", hex, hex, hex);

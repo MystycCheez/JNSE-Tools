@@ -1,6 +1,7 @@
 *.txt
 *.exe
-input
+rle-*
+ppm-*
 log
 images
 output

@@ -8,6 +8,8 @@ FILE *seqlog;
 FILE *terrain;
 FILE *heightmap;
 FILE *bpm;
+FILE *rleOut;
+FILE *rlelog;
 
 bool hex_output = false;
 
