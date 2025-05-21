@@ -46,10 +46,10 @@ int main(int argc, char *argv[])
     snprintf(name, nameLen, chunk);
 
     char *terrain_ppm = malloc(30);
-    sprintf(terrain_ppm, "ppm-out/%s_T.ppm", name);
+    sprintf(terrain_ppm, "output/ppm/%s_T.ppm", name);
     terrain = fopen(terrain_ppm, "w");
     char *heightmap_ppm = malloc(30);
-    sprintf(heightmap_ppm, "ppm-out/%s_H.ppm", name);
+    sprintf(heightmap_ppm, "output/ppm/%s_H.ppm", name);
     heightmap = fopen(heightmap_ppm, "w");
 
     const char *headerText = "P3\n240 80\n255\n";

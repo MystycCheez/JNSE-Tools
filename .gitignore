@@ -1,9 +1,7 @@
 *.txt
 *.exe
-rle-*
-ppm-*
 log
-images
+input
 output
-test data
-holes
+templates
+_*

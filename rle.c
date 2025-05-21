@@ -41,9 +41,8 @@ size_t ParseTerrain(uint8_t data[])
         for (size_t i = 2; i < totalHex + 2; i++) {
             hexToPrintColor(data[i]);
             printf("%02X ", data[i] & 0xFF);
-            if ((i + 1 - 2) % 12 == 0) {
-                printf("\n");
-            }
+            if ((i + 1 - 2) % 8  == 0) printf(" ");
+            if ((i + 1 - 2) % 16 == 0) printf("\n");
         }
     }
     return offset + 1;

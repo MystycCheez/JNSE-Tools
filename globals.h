@@ -10,6 +10,7 @@ FILE *heightmap;
 FILE *bpm;
 FILE *rleOut;
 FILE *rlelog;
+// FILE *
 
 bool hex_output = false;
 

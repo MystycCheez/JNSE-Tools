@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
     }
 
     char *rle_out = malloc(30);
-    sprintf(rle_out, "rle-out/%s.rle", name);
+    sprintf(rle_out, "output/rle/%s.rle", name);
     rleOut = fopen(rle_out, "wb");
 
     if (rleOut == NULL) {
